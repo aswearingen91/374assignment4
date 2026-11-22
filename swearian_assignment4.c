@@ -25,6 +25,7 @@ volatile sig_atomic_t fg_only = 0;
 pid_t bg_pids[MAX_BG];
 int bg_count = 0;
 
+/* Toggles foreground-only mode when Ctrl-Z is pressed */
 void handle_SIGTSTP(int signo)
 {
 	if (fg_only == 0) {
@@ -38,6 +39,7 @@ void handle_SIGTSTP(int signo)
 	}
 }
 
+/* Sets the shell to ignore Ctrl-C and use handle_SIGTSTP for Ctrl-Z */
 void setup_parent_signals(void)
 {
 	struct sigaction SIGINT_action = {0};
@@ -63,6 +65,7 @@ void set_SIGTSTP_blocked(bool block)
 	sigprocmask(block ? SIG_BLOCK : SIG_UNBLOCK, &set, NULL);
 }
 
+/* Prints the prompt, reads a line, and splits it into a command_line */
 struct command_line *parse_input(void)
 {
 	char input[INPUT_LENGTH];
@@ -102,6 +105,7 @@ struct command_line *parse_input(void)
 	return cmd;
 }
 
+/* Frees all memory used by a command_line */
 void free_command(struct command_line *cmd)
 {
 	for (int i = 0; i < cmd->argc; i++)
@@ -111,6 +115,7 @@ void free_command(struct command_line *cmd)
 	free(cmd);
 }
 
+/* Prints the exit value or terminating signal of a process */
 void print_status(int status)
 {
 	if (WIFEXITED(status))
@@ -120,6 +125,7 @@ void print_status(int status)
 	fflush(stdout);
 }
 
+/* Reports and removes any background processes that have finished */
 void check_background(void)
 {
 	int i = 0;
@@ -137,6 +143,7 @@ void check_background(void)
 	}
 }
 
+/* Kills and cleans up all background processes before exiting */
 void kill_background(void)
 {
 	for (int i = 0; i < bg_count; i++) {
@@ -146,6 +153,7 @@ void kill_background(void)
 	bg_count = 0;
 }
 
+/* Opens a file and points stdin or stdout to it, exits on failure */
 void redirect(char *path, int target_fd, int flags, char *err_word)
 {
 	int fd = open(path, flags, 0644);
@@ -158,6 +166,7 @@ void redirect(char *path, int target_fd, int flags, char *err_word)
 	close(fd);
 }
 
+/* Forks a child to run a non-built-in command in the foreground or background */
 void run_external(struct command_line *cmd, int *last_status)
 {
 	int status;
